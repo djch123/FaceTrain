@@ -18,6 +18,9 @@
 extern char *strcpy();
 extern void exit();
 
+#define HID_COUNT 6
+#define OUT_COUNT 4
+
 main(argc, argv)
 int argc;
 char *argv[];
@@ -129,9 +132,9 @@ char *netname;
       imgsize = ROWS(iimg) * COLS(iimg);
       /* bthom ===========================
 	make a net with:
-	  imgsize inputs, 4 hiden units, and 1 output unit
+	  imgsize inputs, 4 hiden units, and 5 output unit
           */
-      net = bpnn_create(imgsize, 4, 1);
+      net = bpnn_create(imgsize, HID_COUNT, OUT_COUNT);
     } else {
       printf("Need some images to train on, use -t\n");
       return 0;
@@ -230,12 +233,14 @@ int list_errors;
       /*** See if it got it right. ***/
       if (evaluate_performance(net, &val, 0)) {
         correct++;
-      } else if (list_errors) {
-	printf("%s - outputs ", NAME(il->list[i]));
-	for (j = 1; j <= net->output_n; j++) {
-	  printf("%.3f ", net->output_units[j]);
-	}
-	putchar('\n');
+      }
+      else if (list_errors) {
+	      printf("%s - outputs ", NAME(il->list[i]));
+	      for (j = 1; j <= net->output_n; j++) {
+	          printf("%.3f ", net->output_units[j]);
+	      }
+
+	      putchar('\n');
       }
       err += val;
     }
@@ -248,7 +253,8 @@ int list_errors;
 	 discussed in section 3.1.2 of homework
           */
       printf("%g %g ", ((double) correct / (double) n) * 100.0, err);
-  } else {
+  }
+  else {
     if (!list_errors)
       printf("0.0 0.0 ");
   }
@@ -260,35 +266,23 @@ double *err;
 {
   double delta;
 
-  delta = net->target[1] - net->output_units[1];
+  *err = 0;
 
-  *err = (0.5 * delta * delta);
+  for (int i=1; i<=net->output_n; ++i) {
+    delta = net->target[i] - net->output_units[i];
+    *err += (0.5 * delta * delta);
+  }
 
-  /*** If the target unit is on... ***/
-  if (net->target[1] > 0.5) {
+  double cmp;
 
-    /*** If the output unit is on, then we correctly recognized me! ***/
-    if (net->output_units[1] > 0.5) {
-      return (1);
-
-    /*** otherwise, we didn't think it was me... ***/
-    } else {
-      return (0);
-    }
-
-  /*** Else, the target unit is off... ***/
-  } else {
-
-    /*** If the output unit is on, then we mistakenly thought it was me ***/
-    if (net->output_units[1] > 0.5) {
-      return (0);
-
-    /*** else, we correctly realized that it wasn't me ***/
-    } else {
-      return (1);
+  for (int i=1; i<=net->output_n; ++i) {
+    cmp = (net->output_units[i] - 0.5) * (net->target[i] - 0.5);
+    if (cmp <= 0){
+      return 0;
     }
   }
 
+  return 1;
 }
 
 

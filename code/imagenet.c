@@ -36,10 +36,35 @@ BPNN *net;
   sscanf(NAME(img), "%[^_]_%[^_]_%[^_]_%[^_]_%d.%[^_]",
     userid, head, expression, eyes, &scale, photo);
 
-  if (!strcmp(userid, "glickman")) {
-    net->target[1] = TARGET_HIGH;  /* it's me, set target to HIGH */
-  } else {
-    net->target[1] = TARGET_LOW;   /* not me, set it to LOW */
+  // if (!strcmp(userid, "glickman")) {
+    // net->target[1] = TARGET_HIGH;  /* it's me, set target to HIGH */
+  // } else {
+    // net->target[1] = TARGET_LOW;   /* not me, set it to LOW */
+  // }
+
+  if (!strcmp(head, "straight")) {
+    net->target[1] = TARGET_HIGH;
+    net->target[2] = TARGET_LOW;
+    net->target[3] = TARGET_LOW;
+    net->target[4] = TARGET_LOW;
+  }
+  else if (!strcmp(head, "left")) {
+    net->target[1] = TARGET_LOW;
+    net->target[2] = TARGET_HIGH;
+    net->target[3] = TARGET_LOW;
+    net->target[4] = TARGET_LOW;
+  }
+  else if (!strcmp(head, "right")) {
+    net->target[1] = TARGET_LOW;
+    net->target[2] = TARGET_LOW;
+    net->target[3] = TARGET_HIGH;
+    net->target[4] = TARGET_LOW;
+  }
+  else if (!strcmp(head, "right")) {
+    net->target[1] = TARGET_LOW;
+    net->target[2] = TARGET_LOW;
+    net->target[3] = TARGET_LOW;
+    net->target[4] = TARGET_HIGH;
   }
 }
 
