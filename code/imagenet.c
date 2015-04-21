@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <pgmimage.h>
 #include <backprop.h>
+#include <string.h>
 
 extern void exit();
 
@@ -23,7 +24,7 @@ extern void exit();
      Remember, units are indexed starting at 1, so target unit 1
      is the one to change....  ***/
 
-load_target(img, net)
+void load_target(img, net)
 IMAGE *img;
 BPNN *net;
 {
@@ -35,12 +36,6 @@ BPNN *net;
   /*** scan in the image features ***/
   sscanf(NAME(img), "%[^_]_%[^_]_%[^_]_%[^_]_%d.%[^_]",
     userid, head, expression, eyes, &scale, photo);
-
-  // if (!strcmp(userid, "glickman")) {
-    // net->target[1] = TARGET_HIGH;  /* it's me, set target to HIGH */
-  // } else {
-    // net->target[1] = TARGET_LOW;   /* not me, set it to LOW */
-  // }
 
   if (!strcmp(head, "straight")) {
     net->target[1] = TARGET_HIGH;
@@ -60,7 +55,7 @@ BPNN *net;
     net->target[3] = TARGET_HIGH;
     net->target[4] = TARGET_LOW;
   }
-  else if (!strcmp(head, "right")) {
+  else if (!strcmp(head, "up")) {
     net->target[1] = TARGET_LOW;
     net->target[2] = TARGET_LOW;
     net->target[3] = TARGET_LOW;
@@ -73,7 +68,7 @@ BPNN *net;
 /********* You shouldn't need to change any of the code below.   *******/
 /***********************************************************************/
 
-load_input_with_image(img, net)
+void load_input_with_image(img, net)
 IMAGE *img;
 BPNN *net;
 {

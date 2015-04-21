@@ -27,13 +27,16 @@ char *argv[];
 {
   char netname[256], trainname[256], test1name[256], test2name[256];
   IMAGELIST *trainlist, *test1list, *test2list;
-  int ind, epochs, seed, savedelta, list_errors;
+  int ind, epochs, seed, savedelta, list_errors, hid_count;
+  double learning_rate;
 
   seed = 102194;   /*** today's date seemed like a good default ***/
   epochs = 100;
   savedelta = 100;
   list_errors = 0;
   netname[0] = trainname[0] = test1name[0] = test2name[0] = '\0';
+  hid_count = HID_COUNT;
+  learning_rate = 0.3;
 
   if (argc < 2) {
     printusage(argv[0]);
@@ -68,6 +71,10 @@ char *argv[];
         case 'T': list_errors = 1;
 	          epochs = 0;
                   break;
+        case 'h': hid_count = atoi(argv[++ind]);
+                  break;
+        case 'l': learning_rate = atoi(argv[++ind]) * 1.0 / 100;
+                  break;
         default : printf("Unknown switch '%c'\n", argv[ind][1]);
                   break;
       }
@@ -99,22 +106,23 @@ char *argv[];
   bpnn_initialize(seed);
 
   /*** Show number of images in train, test1, test2 ***/
-  printf("%d images in training set\n", trainlist->n);
-  printf("%d images in test1 set\n", test1list->n);
-  printf("%d images in test2 set\n", test2list->n);
+  // printf("%d images in training set\n", trainlist->n);
+  // printf("%d images in test1 set\n", test1list->n);
+  // printf("%d images in test2 set\n", test2list->n);
 
   /*** If we've got at least one image to train on, go train the net ***/
   backprop_face(trainlist, test1list, test2list, epochs, savedelta, netname,
-		list_errors);
+    list_errors, hid_count, learning_rate);
 
   exit(0);
 }
 
 
 backprop_face(trainlist, test1list, test2list, epochs, savedelta, netname,
-	      list_errors)
+	      list_errors, hid_count, learning_rate)
 IMAGELIST *trainlist, *test1list, *test2list;
-int epochs, savedelta, list_errors;
+int epochs, savedelta, list_errors, hid_count;
+double learning_rate;
 char *netname;
 {
   IMAGE *iimg;
@@ -125,34 +133,34 @@ char *netname;
   train_n = trainlist->n;
 
   /*** Read network in if it exists, otherwise make one from scratch ***/
-  if ((net = bpnn_read(netname)) == NULL) {
+  // if ((net = bpnn_read(netname)) == NULL) {
     if (train_n > 0) {
-      printf("Creating new network '%s'\n", netname);
+      // printf("Creating new network '%s'\n", netname);
       iimg = trainlist->list[0];
       imgsize = ROWS(iimg) * COLS(iimg);
       /* bthom ===========================
 	make a net with:
 	  imgsize inputs, 4 hiden units, and 5 output unit
           */
-      net = bpnn_create(imgsize, HID_COUNT, OUT_COUNT);
+      net = bpnn_create(imgsize, hid_count, OUT_COUNT);
     } else {
       printf("Need some images to train on, use -t\n");
       return 0;
     }
-  }
+  // }
 
   if (epochs > 0) {
-    printf("Training underway (going to %d epochs)\n", epochs);
-    printf("Will save network every %d epochs\n", savedelta);
+    // printf("Training underway (going to %d epochs)\n", epochs);
+    // printf("Will save network every %d epochs\n", savedelta);
     fflush(stdout);
   }
 
   /*** Print out performance before any epochs have been completed. ***/
-  printf("0 0.0 ");
-  performance_on_imagelist(net, trainlist, 0);
-  performance_on_imagelist(net, test1list, 0);
-  performance_on_imagelist(net, test2list, 0);
-  printf("\n");  fflush(stdout);
+  // printf("0 0.0 ");
+  // performance_on_imagelist(net, trainlist, 0);
+  // performance_on_imagelist(net, test1list, 0);
+  // performance_on_imagelist(net, test2list, 0);
+  // printf("\n");  fflush(stdout);
   if (list_errors) {
     printf("\nFailed to classify the following images from the training set:\n");
     performance_on_imagelist(net, trainlist, 1);
@@ -165,7 +173,7 @@ char *netname;
   /************** Train it *****************************/
   for (epoch = 1; epoch <= epochs; epoch++) {
 
-    printf("%d ", epoch);  fflush(stdout);
+    // printf("%d ", epoch);  fflush(stdout);
 
     sumerr = 0.0;
     for (i = 0; i < train_n; i++) {
@@ -177,17 +185,26 @@ char *netname;
       load_target(trainlist->list[i], net);
 
       /** Run backprop, learning rate 0.3, momentum 0.3 **/
-      bpnn_train(net, 0.3, 0.3, &out_err, &hid_err);
+      bpnn_train(net, learning_rate, 0.3, &out_err, &hid_err);
 
       sumerr += (out_err + hid_err);
     }
-    printf("%g ", sumerr);
+    // printf("%g ", sumerr);
 
     /*** Evaluate performance on train, test, test2, and print perf ***/
-    performance_on_imagelist(net, trainlist, 0);
-    performance_on_imagelist(net, test1list, 0);
-    performance_on_imagelist(net, test2list, 0);
-    printf("\n");  fflush(stdout);
+    // performance_on_imagelist(net, trainlist, 0);
+    // performance_on_imagelist(net, test1list, 0);
+    // performance_on_imagelist(net, test2list, 0);
+    // printf("\n");  fflush(stdout);
+
+  printf("%g ", learning_rate);
+  printf("%d ", epoch);
+  // printf("%d ", hid_count);
+  // printf("%g ", sumerr);
+  performance_on_imagelist(net, trainlist, 0);
+  // performance_on_imagelist(net, test1list, 0);
+  // performance_on_imagelist(net, test2list, 0);
+  printf("\n"); fflush(stdout);
 
     /*** Save network every 'savedelta' epochs ***/
     if (!(epoch % savedelta)) {
@@ -195,7 +212,15 @@ char *netname;
     }
 
   }
-  printf("\n"); fflush(stdout);
+
+  // printf("%g ", learning_rate);
+  // printf("%d ", epochs);
+  // // printf("%d ", hid_count);
+  // // printf("%g ", sumerr);
+  // performance_on_imagelist(net, trainlist, 0);
+  // // performance_on_imagelist(net, test1list, 0);
+  // // performance_on_imagelist(net, test2list, 0);
+  // printf("\n"); fflush(stdout);
 
   /** Save the trained network **/
   if (epochs > 0) {
@@ -285,8 +310,6 @@ double *err;
   return 1;
 }
 
-
-
 printusage(prog)
 char *prog;
 {
@@ -295,6 +318,8 @@ char *prog;
   printf("       [-e <number of epochs>]\n");
   printf("       [-s <random number generator seed>]\n");
   printf("       [-S <number of epochs between saves of network>]\n");
+  printf("       [-h <count of hidden units>]\n");
+  printf("       [-l <learning rate * 100>]\n");
   printf("       [-t <training set list>]\n");
   printf("       [-1 <testing set 1 list>]\n");
   printf("       [-2 <testing set 2 list>]\n");

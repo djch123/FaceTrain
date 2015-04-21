@@ -112,7 +112,7 @@ int m, n;
 
 void bpnn_initialize(seed)
 {
-  printf("Random number generator seed: %d\n", seed);
+  // printf("Random number generator seed: %d\n", seed);
   srandom(seed);
 }
 
@@ -362,7 +362,7 @@ char *filename;
   }
 
   n1 = net->input_n;  n2 = net->hidden_n;  n3 = net->output_n;
-  printf("Saving %dx%dx%d network to '%s'\n", n1, n2, n3, filename);
+  // printf("Saving %dx%dx%d network to '%s'\n", n1, n2, n3, filename);
   fflush(stdout);
 
   write(fd, (char *) &n1, sizeof(int));
