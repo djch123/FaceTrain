@@ -36,39 +36,11 @@ BPNN *net;
   sscanf(NAME(img), "%[^_]_%[^_]_%[^_]_%[^_]_%d.%[^_]",
     userid, head, expression, eyes, &scale, photo);
 
-  if (!strcmp(eyes, "sunglasses")) {
-    net->target[5] = TARGET_HIGH; 
+  if (!strcmp(userid, "glickman")) {
+    net->target[1] = TARGET_HIGH;  /* it's me, set target to HIGH */
   } else {
-    net->target[5] = TARGET_LOW;   
+    net->target[1] = TARGET_LOW;   /* not me, set it to LOW */
   }
-
-	if (strcmp(head, "straight")) {
-		net->target[1] = TARGET_HIGH;  /* it's me, set target to HIGH */
-		net->target[1] = TARGET_LOW;
-		net->target[1] = TARGET_LOW;
-		net->target[1] = TARGET_LOW;
-	}
-	else if(strcmp(head, "left"))
-	{
-		net->target[1] = TARGET_LOW; 
-		net->target[1] = TARGET_HIGH;
-		net->target[1] = TARGET_LOW;
-		net->target[1] = TARGET_LOW;
-	}
-	else if(strcmp(head, "up"))
-	{
-		net->target[1] = TARGET_LOW; 
-		net->target[1] = TARGET_LOW;
-		net->target[1] = TARGET_HIGH;
-		net->target[1] = TARGET_LOW;
-	}
-	else if(strcmp(head, "right"))
-	{
-		net->target[1] = TARGET_LOW; 
-		net->target[1] = TARGET_LOW;
-		net->target[1] = TARGET_LOW;
-		net->target[1] = TARGET_HIGH;
-	}
 }
 
 
@@ -85,7 +57,7 @@ BPNN *net;
 
   nr = ROWS(img);
   nc = COLS(img);
-  imgsize = nr * nc;
+  imgsize = nr * nc;;
   if (imgsize != net->input_n) {
     printf("LOAD_INPUT_WITH_IMAGE: This image has %d pixels,\n", imgsize);
     printf("   but your net has %d input units.  I give up.\n", net->input_n);

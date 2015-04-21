@@ -24,4 +24,3 @@ backprop_initr.o: backprop.c backprop.h
 backprop_init0.o: backprop.c backprop.h
 	$(CC) ${CFLAGS} -c -DINITZERO backprop.c
 	mv backprop.o backprop_init0.o
-

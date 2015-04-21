@@ -18,9 +18,6 @@
 extern char *strcpy();
 extern void exit();
 
-static int hidden_cnt=3;
-
-
 main(argc, argv)
 int argc;
 char *argv[];
@@ -28,13 +25,10 @@ char *argv[];
   char netname[256], trainname[256], test1name[256], test2name[256];
   IMAGELIST *trainlist, *test1list, *test2list;
   int ind, epochs, seed, savedelta, list_errors;
-  int outflag=0;
-  int detailflag;
-  char outpath[256];
 
   seed = 102194;   /*** today's date seemed like a good default ***/
   epochs = 100;
-  savedelta = 10;
+  savedelta = 100;
   list_errors = 0;
   netname[0] = trainname[0] = test1name[0] = test2name[0] = '\0';
 
@@ -71,19 +65,6 @@ char *argv[];
         case 'T': list_errors = 1;
 	          epochs = 0;
                   break;
-		case 'h':
-		case 'H':
-				hidden_cnt=atoi(argv[++ind]);
-				break;
-		case 'o':
-		case 'O':
-				outflag=1;
-				strcpy(outpath,argv[++ind]);
-				break;
-		case 'd':
-		case 'D':
-				detailflag=1;
-				break;
         default : printf("Unknown switch '%c'\n", argv[ind][1]);
                   break;
       }
@@ -121,38 +102,22 @@ char *argv[];
 
   /*** If we've got at least one image to train on, go train the net ***/
   backprop_face(trainlist, test1list, test2list, epochs, savedelta, netname,
-		list_errors,outflag,outpath,detailflag);
+		list_errors);
 
   exit(0);
 }
 
 
 backprop_face(trainlist, test1list, test2list, epochs, savedelta, netname,
-	      list_errors,outflag,outpath,dflag)
+	      list_errors)
 IMAGELIST *trainlist, *test1list, *test2list;
 int epochs, savedelta, list_errors;
 char *netname;
-int outflag;
-char *outpath;
-int dflag;
 {
   IMAGE *iimg;
-  int bestat=0;
   BPNN *net;
   int train_n, epoch, i, imgsize;
   double out_err, hid_err, sumerr;
-  FILE *dataout=NULL;
-  double cur[8]={0,0,0,0};
-  double best[4]={0,0,0,0};
-
-  if(outflag)
-  {
-	  if((dataout=fopen(outpath,"a+"))==NULL)
-	  {
-		  printf("\nFailed to Access Data Out File:%s\n",outpath);
-		  exit(1);
-	  }
-  }
 
   train_n = trainlist->n;
 
@@ -166,41 +131,36 @@ int dflag;
 	make a net with:
 	  imgsize inputs, 4 hiden units, and 1 output unit
           */
-      net = bpnn_create(imgsize, hidden_cnt, 5);
+      net = bpnn_create(imgsize, 4, 1);
     } else {
       printf("Need some images to train on, use -t\n");
-      return;
+      return 0;
     }
   }
 
   if (epochs > 0) {
     printf("Training underway (going to %d epochs)\n", epochs);
     printf("Will save network every %d epochs\n", savedelta);
-    //fflush(stdout);
+    fflush(stdout);
   }
+
   /*** Print out performance before any epochs have been completed. ***/
   printf("0 0.0 ");
-  
-
-  performance_on_imagelist(net, trainlist, 0,0,0,0);
-  performance_on_imagelist(net, test1list, 0,&(best[0]),&(best[1]),1);
-  performance_on_imagelist(net, test2list, 0,&(best[2]),&(best[3]),1);
-  
-
+  performance_on_imagelist(net, trainlist, 0);
+  performance_on_imagelist(net, test1list, 0);
+  performance_on_imagelist(net, test2list, 0);
   printf("\n");  fflush(stdout);
   if (list_errors) {
     printf("\nFailed to classify the following images from the training set:\n");
-    performance_on_imagelist(net, trainlist, 1,0,0,0);
+    performance_on_imagelist(net, trainlist, 1);
     printf("\nFailed to classify the following images from the test set 1:\n");
-    performance_on_imagelist(net, test1list, 1,0,0,0);
+    performance_on_imagelist(net, test1list, 1);
     printf("\nFailed to classify the following images from the test set 2:\n");
-    performance_on_imagelist(net, test2list, 1,0,0,0);
-	printf("\nEND %d\n",epochs);
+    performance_on_imagelist(net, test2list, 1);
   }
 
-
   /************** Train it *****************************/
-  for(epoch = 1; epoch <= epochs; epoch++) {
+  for (epoch = 1; epoch <= epochs; epoch++) {
 
     printf("%d ", epoch);  fflush(stdout);
 
@@ -214,55 +174,28 @@ int dflag;
       load_target(trainlist->list[i], net);
 
       /** Run backprop, learning rate 0.3, momentum 0.3 **/
-      bpnn_train(net, 0.3, 0.2, &out_err, &hid_err);
+      bpnn_train(net, 0.3, 0.3, &out_err, &hid_err);
 
       sumerr += (out_err + hid_err);
     }
-    printf("%g %g", sumerr,net->scale);
+    printf("%g ", sumerr);
 
     /*** Evaluate performance on train, test, test2, and print perf ***/
-	
-    performance_on_imagelist(net, trainlist, 0,0,0,0);
-    performance_on_imagelist(net, test1list, 0,&(cur[0]),&(cur[1]),1);
-    performance_on_imagelist(net, test2list, 0,&(cur[2]),&(cur[3]),1);
+    performance_on_imagelist(net, trainlist, 0);
+    performance_on_imagelist(net, test1list, 0);
+    performance_on_imagelist(net, test2list, 0);
     printf("\n");  fflush(stdout);
-	if(dflag && outflag)
-	{
-		fprintf(dataout,"%d %f %f %f %f \r\n",epoch,cur[0],cur[1],cur[2],cur[3]);
-	}
 
     /*** Save network every 'savedelta' epochs ***/
-    if (!(epoch % savedelta) && (best[0]-cur[0])<0) {
-	  best[0]=cur[0];
-	  best[1]=cur[1];
-	  best[2]=cur[2];
-	  best[3]=cur[3];
-	  bestat=epoch;
+    if (!(epoch % savedelta)) {
       bpnn_save(net, netname);
     }
-
-	if((best[0]-cur[0])>0.03 && epoch>20)
-	{
-		//break;
-	}
 
   }
   printf("\n"); fflush(stdout);
 
-  if(outflag)
-  {
-	  fprintf(dataout,"%f %f %f %f %d %d \r\n",best[0],best[1],best[2],best[3],epoch,bestat);
-  }
-
-  if(dataout!=NULL)
-  {
-	  fclose(dataout);
-  }
-
-  
-
   /** Save the trained network **/
-  if (epochs > 0  && (best[0]-cur[0])<0) {
+  if (epochs > 0) {
     bpnn_save(net, netname);
   }
 }
@@ -271,13 +204,10 @@ int dflag;
 /*** Computes the performance of a net on the images in the imagelist. ***/
 /*** Prints out the percentage correct on the image set, and the
      average error between the target and the output units for the set. ***/
-performance_on_imagelist(net, il, list_errors,ptr1,ptr2,ret)
+performance_on_imagelist(net, il, list_errors)
 BPNN *net;
 IMAGELIST *il;
 int list_errors;
-double *ptr1;
-double *ptr2;
-int ret;
 {
   double err, val;
   int i, n, j, correct;
@@ -317,21 +247,10 @@ int ret;
 	 this line prints part of the ouput line
 	 discussed in section 3.1.2 of homework
           */
-      printf("%d %d %g %g ",correct,n, ((double) correct / (double) n) * 100.0, err);
-	  
-  } else 
-  {
+      printf("%g %g ", ((double) correct / (double) n) * 100.0, err);
+  } else {
     if (!list_errors)
       printf("0.0 0.0 ");
-  }
-
-  if(ret==1)
-  {
-	  *ptr1=((double) correct / (double) n) * 100.0;
-  }
-  if(ret==1)
-  {
-	  *ptr2=err;
   }
 }
 

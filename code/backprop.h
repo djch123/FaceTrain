@@ -31,7 +31,6 @@ typedef struct {
   double *hidden_delta;         /* storage for hidden unit error */
   double *output_delta;         /* storage for output unit error */
 
-  double scale;
   double *target;               /* storage for target vector */
 
   double **input_weights;       /* weights from input to hidden layer */

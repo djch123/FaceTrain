@@ -300,12 +300,12 @@ char *filename;
   while (fgets(buf, 1999, fp) != NULL) {
 
     imgl_munge_name(buf);
-    //printf("Loading '%s'...", buf);  fflush(stdout);
+    printf("Loading '%s'...", buf);  fflush(stdout);
     if ((iimg = img_open(buf)) == 0) {
       printf("Couldn't open '%s'\n", buf);
     } else {
       imgl_add(il, iimg);
-      //printf("done\n");
+      printf("done\n");
     }
     fflush(stdout);
   }
@@ -320,6 +320,6 @@ char *buf;
   int j;
 
   j = 0;
-  while (buf[j] != '\n' && buf[j]!='\r') j++;
+  while (buf[j] != '\n') j++;
   buf[j] = '\0';
 }

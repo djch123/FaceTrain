@@ -82,17 +82,15 @@ int m, n;
 }
 
 
-bpnn_randomize_weights(w, m, n,scale)
+bpnn_randomize_weights(w, m, n)
 double **w;
 int m, n;
-double *scale;
 {
   int i, j;
 
   for (i = 0; i <= m; i++) {
     for (j = 0; j <= n; j++) {
       w[i][j] = dpn1();
-	  //*scale+=w[i][j];
     }
   }
 }
@@ -146,8 +144,6 @@ int n_in, n_hidden, n_out;
 
   newnet->input_prev_weights = alloc_2d_dbl(n_in + 1, n_hidden + 1);
   newnet->hidden_prev_weights = alloc_2d_dbl(n_hidden + 1, n_out + 1);
-  
-  //newnet->scale=0;
 
   return (newnet);
 }
@@ -201,19 +197,18 @@ int n_in, n_hidden, n_out;
 {
 
   BPNN *newnet;
-  double scale=0;
 
   newnet = bpnn_internal_create(n_in, n_hidden, n_out);
 
 #ifdef INITZERO
   bpnn_zero_weights(newnet->input_weights, n_in, n_hidden);
 #else
-  bpnn_randomize_weights(newnet->input_weights, n_in, n_hidden,&scale);
+  bpnn_randomize_weights(newnet->input_weights, n_in, n_hidden);
 #endif
-  bpnn_randomize_weights(newnet->hidden_weights, n_hidden, n_out,&scale);
+  bpnn_randomize_weights(newnet->hidden_weights, n_hidden, n_out);
   bpnn_zero_weights(newnet->input_prev_weights, n_in, n_hidden);
   bpnn_zero_weights(newnet->hidden_prev_weights, n_hidden, n_out);
-  //newnet->scale=scale;
+
   return (newnet);
 }
 
@@ -282,9 +277,8 @@ int nh, no;
 }
 
 
-void bpnn_adjust_weights(delta, ndelta, ly, nly, w, oldw, eta, momentum,scale)
+void bpnn_adjust_weights(delta, ndelta, ly, nly, w, oldw, eta, momentum)
 double *delta, *ly, **w, **oldw, eta, momentum;
-double *scale;
 {
   double new_dw;
   int k, j;
@@ -293,7 +287,6 @@ double *scale;
   for (j = 1; j <= ndelta; j++) {
     for (k = 0; k <= nly; k++) {
       new_dw = ((eta * delta[j] * ly[k]) + (momentum * oldw[k][j]));
-	  //*scale+=new_dw;
       w[k][j] += new_dw;
       oldw[k][j] = new_dw;
     }
@@ -346,9 +339,9 @@ double eta, momentum, *eo, *eh;
 
   /*** Adjust input and hidden weights. ***/
   bpnn_adjust_weights(net->output_delta, out, net->hidden_units, hid,
-      net->hidden_weights, net->hidden_prev_weights, eta, momentum,&(net->scale));
+      net->hidden_weights, net->hidden_prev_weights, eta, momentum);
   bpnn_adjust_weights(net->hidden_delta, hid, net->input_units, in,
-      net->input_weights, net->input_prev_weights, eta, momentum,&(net->scale));
+      net->input_weights, net->input_prev_weights, eta, momentum);
 
 }
 
@@ -434,7 +427,6 @@ char *filename;
   for (i = 0; i <= n1; i++) {
     for (j = 0; j <= n2; j++) {
       fastcopy(&(new->input_weights[i][j]), &mem[memcnt], sizeof(double));
-	  //new->scale+=new->input_weights[i][j];
       memcnt += sizeof(double);
     }
   }
